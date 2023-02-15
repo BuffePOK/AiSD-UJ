@@ -13,37 +13,48 @@ struct DoubleNode {
     DoubleNode *next, *prev;
     // konstruktor domyslny (niepotrzebny)
     DoubleNode() : value(T()), next(nullptr), prev(nullptr) {}
-    DoubleNode(const T& item, DoubleNode *nptr = nullptr, DoubleNode *pptr = nullptr) : value(item), next(nptr), prev(pptr) {} // konstruktor
+    DoubleNode(const T& item, DoubleNode *nptr=nullptr, DoubleNode *pptr=nullptr)
+        : value(item), next(nptr), prev(pptr) {} // konstruktor
     ~DoubleNode() {} // destruktor
 };
 
 
 template <typename T>
 class DoubleList {
-    DoubleNode<T> *nil;
-    int _size;
+    DoubleNode<T> *head, *tail;
 public:
-    DoubleList() : nil(nullptr), _size(0) {}
+    DoubleList() : head(nullptr), tail(nullptr) {}
     ~DoubleList(); // tu trzeba wyczyscic wezly
+
     DoubleList(const DoubleList& other); // copy constructor
-    DoubleList(DoubleList&& other); // move constructor
+    // usage:   DoubleList<int> list2(list1);
+
+    DoubleList(DoubleList&& other); // move constructor NIEOBOWIAZKOWE
+    // usage:   DoubleList<int> list2(std::move(list1));
+
     DoubleList& operator=(const DoubleList& other); // copy assignment operator, return *this
+    // usage:   list2 = list1;
+
     DoubleList& operator=(DoubleList&& other); // move assignment operator, return *this
-    bool empty() const { return _size == 0; }
-    int size() const { return _size; }; // O(n) bo trzeba policzyc
+    // usage:   list2 = std::move(list1); NIEOBOWIAZKOWE
+
+    bool empty() const { return head == nullptr; }
+    int size() const; // O(n) bo trzeba policzyc
     void push_front(const T& item); // O(1)
-    void push_front(T&& item); // O(1)
+    void push_front(T&& item); // O(1) NIEOBOWIAZKOWE
     void push_back(const T& item); // O(1)
-    void push_back(T&& item); // O(1)
-    T& front() const { return nil->next->value; } // zwraca poczatek, nie usuwa
-    T& back() const { return nil->prev->value; } // zwraca koniec, nie usuwa
+    void push_back(T&& item); // O(1) NIEOBOWIAZKOWE
+    T& front() const { return head->value; } // zwraca poczatek, nie usuwa
+    T& back() const { return tail->value; } // zwraca koniec, nie usuwa
     void pop_front(); // usuwa poczatek O(1)
-    void pop_back(); // usuwa koniec O(n)
+    void pop_back(); // usuwa koniec O(1)
     void clear(); // czyszczenie listy z elementow O(n)
     void display(); // O(n)
     void display_reversed(); // O(n)
-    T& operator[](int pos); // podstawienie L[pos]=item
-    const T& operator[](int pos) const; // odczyt L[pos]
+
+    // Operacje z indeksami. NIEOBOWIAZKOWE
+    T& operator[](int pos); // podstawienie L[pos]=item, odczyt L[pos]
+    const T& operator[](int pos) const; // dostep do obiektu const
     void erase(int pos);
     int index(const T& item); // jaki index na liscie (-1 gdy nie ma) O(n)
     void insert(int pos, const T& item); // inserts item before pos,
@@ -54,175 +65,236 @@ public:
 
 template <typename T>
 DoubleList<T>::~DoubleList() {
-  while (!empty()) pop_front();
-  delete nil;
+    clear();
 }
 
 template <typename T>
-DoubleList<T>::DoubleList(const DoubleList& other) : nil{nullptr}, _size{0} {
-  DoubleNode<T> *node = other.nil->next;
-
-  do {
-    push_back(node->value);
-    node = node->next;
-  } while (node != other.nil->next);
+DoubleList<T>::DoubleList(const DoubleList& other) {
+    head = tail = nullptr;
+    DoubleNode<T>* temp = other.head;
+    while (temp != nullptr) {
+        push_back(temp->value);
+        temp = temp->next;
+    }
 }
 
 template <typename T>
-DoubleList<T>& DoubleList<T>::operator=(const DoubleList<T>& other) {
-  DoubleList<T> temp(other);
-  std::swap(nil, temp.nil);
-  std::swap(_size, temp._size);
-  return *this;
+DoubleList<T>::DoubleList(DoubleList&& other) {
+    head = other.head;
+    tail = other.tail;
+    other.head = other.tail = nullptr;
+}
+
+template <typename T>
+DoubleList<T>& DoubleList<T>::operator=(const DoubleList& other) {
+    if (this != &other) {
+        clear();
+        DoubleNode<T>* temp = other.head;
+        while (temp != nullptr) {
+            push_back(temp->value);
+            temp = temp->next;
+        }
+    }
+    return *this;
+}
+
+template <typename T>
+DoubleList<T>& DoubleList<T>::operator=(DoubleList&& other) {
+    if (this != &other) {
+        clear();
+        head = other.head;
+        tail = other.tail;
+        other.head = other.tail = nullptr;
+    }
+    return *this;
+}
+
+template <typename T>
+int DoubleList<T>::size() const {
+    int count = 0;
+    DoubleNode<T>* temp = head;
+    while (temp != nullptr) {
+        count++;
+        temp = temp->next;
+    }
+    return count;
 }
 
 template <typename T>
 void DoubleList<T>::push_front(const T& item) {
-
-  if (empty()) {
-    DoubleNode<T> *node = new DoubleNode<T>(item);
-    nil = new DoubleNode<T>(T(), node, node);
-    node->prev = nil;
-    node->next = nil;
-  } else {
-    DoubleNode<T> *node = new DoubleNode<T>(item, nil->next, nil);
-    nil->prev->prev = node;
-    nil->next = node;
-  }
-
-  _size++;
+    if (!empty()) {
+        head = new DoubleNode<T>(item, head);
+        head->next->prev = head;
+    } else {
+        head = tail = new DoubleNode<T>(item);
+    }
 }
 
 template <typename T>
 void DoubleList<T>::push_front(T&& item) {
-
-  if (empty()) {
-    DoubleNode<T> *node = new DoubleNode<T>(std::move(item));
-    nil = new DoubleNode<T>(T(), node, node);
-    node->prev = nil;
-    node->next = nil;
-  } else {
-    DoubleNode<T> *node = new DoubleNode<T>(item, nil->next, nil);
-    nil->prev->prev = node;
-    nil->next = node;
-  }
-
-  _size++;
+    if (!empty()) {
+        head = new DoubleNode<T>(std::move(item), head);
+        head->next->prev = head;
+    } else {
+        head = tail = new DoubleNode<T>(std::move(item));
+    }
 }
 
 template <typename T>
 void DoubleList<T>::push_back(const T& item) {
-
-  if (empty()) {
-    DoubleNode<T> *node = new DoubleNode<T>(item);
-    nil = new DoubleNode<T>(T(), node, node);
-    node->prev = nil;
-    node->next = nil;
-  } else {
-    DoubleNode<T> *node = new DoubleNode<T>(item, nil, nil->prev);
-    nil->prev->next = node;
-    nil->prev = node;
-  }
-
-  _size++;
+    if (!empty()) {
+        tail = new DoubleNode<T>(item, nullptr, tail);
+        tail->prev->next = tail;
+    } else {
+        head = tail = new DoubleNode<T>(item);
+    }
 }
 
 template <typename T>
 void DoubleList<T>::push_back(T&& item) {
-
-  if (empty()) {
-    DoubleNode<T> *node = new DoubleNode<T>(std::move(item));
-    nil = new DoubleNode<T>(T(), node, node);
-    node->prev = nil;
-    node->next = nil;
-  } else {
-    DoubleNode<T> *node = new DoubleNode<T>(std::move(item), nil->next, nil->prev);
-    nil->prev->next = node;
-    nil->prev = node;
-  }
-
-  _size++;
+    if (!empty()) {
+        tail = new DoubleNode<T>(std::move(item), nullptr, tail);
+        tail->prev->next = tail;
+    } else {
+        head = tail = new DoubleNode<T>(std::move(item));
+    }
 }
 
 template <typename T>
 void DoubleList<T>::pop_front() {
-  assert(!empty());
-  DoubleNode<T> *node = nil->next;
-
-  if (nil->next == nil->prev)
-    delete nil;
-  else
-    nil->next = nil->next->next;
-
-  _size--;
-  delete node;
+    if (!empty()) {
+        DoubleNode<T>* temp = head;
+        head = head->next;
+        if (head != nullptr) {
+            head->prev = nullptr;
+        } else {
+            tail = nullptr;
+        }
+        delete temp;
+    }
 }
 
 template <typename T>
 void DoubleList<T>::pop_back() {
-  assert(!empty());
-  DoubleNode<T> *node = nil->prev;
-
-  if (nil->next == nil->prev)
-    delete nil;
-  else
-    nil->prev = nil->prev->prev;
-
-  _size--;
-  delete node;
+    if (!empty()) {
+        DoubleNode<T>* temp = tail;
+        tail = tail->prev;
+        if (tail != nullptr) {
+            tail->next = nullptr;
+        } else {
+            head = nullptr;
+        }
+        delete temp;
+    }
 }
 
 template <typename T>
 void DoubleList<T>::clear() {
-  while (!empty()) { pop_front(); }
+    DoubleNode<T>* temp = head;
+    while (temp != nullptr) {
+        DoubleNode<T>* next = temp->next;
+        delete temp;
+        temp = next;
+    }
+    head = tail = nullptr;
 }
 
 template <typename T>
 void DoubleList<T>::display() {
-  DoubleNode<T> *node = nil->next;
-
-  for (int i = 0; i < _size; i++) {
-    std::cout << node->value << " ";
-    node = node->next;
-  }
-
-  std::cout << '\n';
+    DoubleNode<T>* temp = head;
+    while (temp != nullptr) {
+        std::cout << temp->value << " ";
+        temp = temp->next;
+    }
+    std::cout << std::endl;
 }
 
 template <typename T>
 void DoubleList<T>::display_reversed() {
-  DoubleNode<T> *node = nil->prev;
-
-  for (int i = _size; i > 0; i--) {
-    std::cout << node->value << " ";
-    node = node->prev;
-  }
-
-  std::cout << '\n';
+    DoubleNode<T>* current = tail;
+    while (current) {
+        std::cout << current->value << ' ';
+        current = current->prev;
+    }
+    std::cout << std::endl;
 }
 
 template <typename T>
 T& DoubleList<T>::operator[](int pos) {
-  assert(pos >= 0 && pos < _size);
-
-  DoubleNode<T> *node = nil->next;
-
-  for (int i = 0; i < pos; i++)
-    node = node->next;
-
-  return node->value;
+    assert(pos >= 0 && pos < size());
+    DoubleNode<T>* current = head;
+    for (int i = 0; i < pos; ++i)
+        current = current->next;
+    return current->value;
 }
 
 template <typename T>
 const T& DoubleList<T>::operator[](int pos) const {
-  assert(pos >= 0 && pos < _size);
+    assert(pos >= 0 && pos < size());
+    DoubleNode<T>* current = head;
+    for (int i = 0; i < pos; ++i)
+        current = current->next;
+    return current->value;
+}
 
-  DoubleNode<T> *node = nil->next;
+template <typename T>
+void DoubleList<T>::erase(int pos) {
+    assert(pos >= 0 && pos < size());
+    if (pos == 0)
+        pop_front();
+    else if (pos == size() - 1)
+        pop_back();
+    else {
+        DoubleNode<T>* current = head;
+        for (int i = 0; i < pos; ++i)
+            current = current->next;
+        current->prev->next = current->next;
+        current->next->prev = current->prev;
+        delete current;
+    }
+}
 
-  for (int i = 0; i < pos; i++)
-    node = node->next;
+template <typename T>
+int DoubleList<T>::index(const T& item) {
+    int pos = 0;
+    for (DoubleNode<T> *current = head; current != nullptr; current = current->next, ++pos) {
+        if (current->value == item) {
+            return pos;
+        }
+    }
+    return -1;
+}
 
-  return node->value;
+template <typename T>
+void DoubleList<T>::insert(int pos, const T& item) {
+    if (pos == 0) {
+        push_front(item);
+    } else if (pos == size()) {
+        push_back(item);
+    } else {
+        DoubleNode<T> *current = head;
+        for (int i = 0; i < pos - 1; ++i) {
+            current = current->next;
+        }
+        current->next = new DoubleNode<T>(item, current->next, current);
+        current->next->next->prev = current->next;
+    }
+}
+
+template <typename T>
+void DoubleList<T>::insert(int pos, T&& item) {
+    if (pos == 0) {
+        push_front(std::move(item));
+    } else if (pos == size()) {
+        push_back(std::move(item));
+    } else {
+        DoubleNode<T> *current = head;
+        for (int i = 0; i < pos - 1; ++i) {
+            current = current->next;
+        }
+        current->next = new DoubleNode<T>(std::move(item), current->next, current);
+        current->next->next->prev = current->next;
+    }
 }
 
 #endif

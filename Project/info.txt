@@ -1,0 +1,20 @@
+=============================
+Representation of Polynomials
+=============================
+
+
+Testing program has two modes:
+
+- User mode.
+
+    This mode requiers some input from user. In the begining user creates two polynomial objects, and than chooses operations.
+
+- Presentation mode.
+
+    This mode does not requie any input. It works on two already generated polynomial objects, and shows all operations that user can do with them.
+
+The way polynomial is represented:
+
+    Representation is based on array that contain arguments of each polynomial element.
+    So if we have an array like: {1, 2, 3} 
+    The polynomial will be: 1 + 2x + 3x^2

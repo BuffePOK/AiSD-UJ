@@ -1,8 +1,8 @@
 #include "arraylist.h"
+
 #include <iostream>
 #include <vector>
 #include <algorithm>
-#include <ctime>
 
 using namespace std;
 
@@ -239,7 +239,6 @@ bool reverse_test() {
 }
 
 int main(int argc, char const *argv[]) {
-  srand(time(NULL));
 
   cout<< boolalpha;
   cout << "empty() test: " << empty_test() << '\n';
@@ -263,3 +262,6 @@ int main(int argc, char const *argv[]) {
 
   return 0;
 }
+
+  // std::string some_string;
+  // std::cin >> some_string;

@@ -14,10 +14,6 @@ template <typename T>
 class ArrayList {
   public:
     ArrayList(unsigned size = MINSIZE) : _size{size}, _elCount{0} {
-      while (_size < size) {
-        size *= 2;
-      }
-
       _tab = new T[_size];
       assert(_tab != nullptr);
     }
@@ -41,9 +37,13 @@ class ArrayList {
       if (this != &other) {
         delete [] _tab;
 
-        _tab = other._tab;
+        _tab = new T[_size];
         _size = other._size;
         _elCount = other._elCount;
+
+        for (int i = 0; i < _elCount; ++i) {
+                _tab[i] = other._tab[i];
+            }
       }
 
       return *this;
@@ -53,9 +53,10 @@ class ArrayList {
       if (this != &other) {
         delete [] _tab;
 
-        _tab = other._tab;
+        _tab = new T[_size];
         _size = other._size;
         _elCount = other._elCount;
+
         other._tab = nullptr;
         other._size = 0;
         other._elCount = 0;
@@ -79,14 +80,14 @@ class ArrayList {
       _tab[0] = item;
     }
 
-    void push_front(T& item) {
+    void push_front(T&& item) {
       if (++_elCount > _size)
         double_size();
 
       for (unsigned i = _elCount - 1; i > 0; i--)
-        _tab[i] = _tab[i - 1];
+        _tab[i] = std::move(_tab[i - 1]);
 
-      _tab[0] = item;
+      _tab[0] = std::move(item);
     }
 
     void push_back(const T& item) {
@@ -96,11 +97,11 @@ class ArrayList {
       _tab[_elCount++] = item;
     }
 
-    void push_back(T& item) {
+    void push_back(T&& item) {
       if (_elCount + 1 > _size)
         double_size();
 
-      _tab[_elCount++] = item;
+      _tab[_elCount++] = std::move(item);
     }
 
     T& front() {
@@ -168,14 +169,14 @@ class ArrayList {
       _tab[pos] = item;
     }
 
-    void insert(T& item, unsigned pos) {
+    void insert(T&& item, unsigned pos) {
       if (++_elCount > _size)
         double_size();
 
       for (unsigned i = _elCount; i > pos; i--)
-        _tab[i] = _tab[i - 1];
+        _tab[i] = std::move(_tab[i - 1]);
 
-      _tab[pos] = item;
+      _tab[pos] = std::move(item);
     }
 
     void erase(unsigned pos) {
